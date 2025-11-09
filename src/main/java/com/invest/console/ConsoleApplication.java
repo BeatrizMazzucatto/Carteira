@@ -59,6 +59,12 @@ public class ConsoleApplication implements CommandLineRunner {
     @Autowired
     private com.invest.service.InflacaoService inflacaoService;
 
+    @Autowired
+    private com.invest.service.RelatorioExibicaoService relatorioExibicaoService;
+
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     private Scanner scanner = new Scanner(System.in);
     private Investidor investidorLogado = null;
     private String jwtToken = null;
@@ -347,6 +353,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("4. Relatório de Rentabilidade Total");
             System.out.println("5. Consultar Ativos");
             System.out.println("6. Configurações");
+            System.out.println("7. Relatório de Exibição (JSON)");
             System.out.println("0. Sair");
             System.out.println();
             System.out.print("Opção: ");
@@ -372,6 +379,9 @@ public class ConsoleApplication implements CommandLineRunner {
                     break;
                 case 6:
                     mostrarConfiguracoes();
+                    break;
+                case 7:
+                    mostrarRelatorioExibicao();
                     break;
                 case 0:
                     System.out.println("Obrigado por usar o Sistema de Carteiras!");
@@ -2836,5 +2846,43 @@ public class ConsoleApplication implements CommandLineRunner {
         }
         
         return senha.toString().trim();
+    }
+
+    /**
+     * Mostra o relatório de exibição em formato JSON
+     */
+    private void mostrarRelatorioExibicao() {
+        System.out.println("RELATÓRIO DE EXIBIÇÃO (JSON)");
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println();
+        
+        try {
+            com.invest.dto.RelatorioExibicaoResponse relatorio = 
+                relatorioExibicaoService.gerarRelatorioExibicao(investidorLogado.getId());
+            
+            // Converte para JSON usando ObjectMapper do Spring Boot (já configurado com JavaTimeModule)
+            // Cria uma cópia com indentação habilitada
+            com.fasterxml.jackson.databind.ObjectMapper mapper = objectMapper.copy();
+            mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
+            
+            String json = mapper.writeValueAsString(relatorio);
+            
+            System.out.println("JSON do Relatório:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println();
+            System.out.println(json);
+            System.out.println();
+            System.out.println();
+            
+        } catch (Exception e) {
+            System.out.println();
+            System.out.println("Erro ao gerar relatório: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println();
+        }
+        
+        System.out.println("Pressione Enter para continuar...");
+        scanner.nextLine();
+        System.out.println();
     }
 }
