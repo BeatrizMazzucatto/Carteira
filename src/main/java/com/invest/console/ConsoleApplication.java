@@ -1,24 +1,29 @@
 package com.invest.console;
 
-import com.invest.model.Investidor;
-import com.invest.model.Carteira;
-import com.invest.service.InvestidorService;
-import com.invest.service.CarteiraService;
-import com.invest.service.TransacaoService;
-import com.invest.service.RentabilidadeService;
-import com.invest.service.AuthService;
-import com.invest.service.external.GoogleSheetsService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-
 import java.io.Console;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.invest.model.Carteira;
+import com.invest.model.Investidor;
+import com.invest.service.AuthService;
+import com.invest.service.CarteiraService;
+import com.invest.service.InvestidorService;
+import com.invest.service.RentabilidadeService;
+import com.invest.service.TransacaoService;
+import com.invest.service.external.GoogleSheetsService;
 
 /**
  * Aplicação de Console para Sistema de Carteiras
@@ -2211,8 +2216,7 @@ public class ConsoleApplication implements CommandLineRunner {
             // Configura o terminal para modo raw (se possível)
             String os = System.getProperty("os.name").toLowerCase();
             boolean isWindows = os.contains("win");
-            
-            // Lê caractere por caractere
+
             int caractere;
             System.out.flush(); // Garante que o prompt foi exibido
             
@@ -2220,25 +2224,21 @@ public class ConsoleApplication implements CommandLineRunner {
                 caractere = System.in.read();
                 
                 if (caractere == '\n' || caractere == '\r') {
-                    break; // Enter pressionado
+                    break; 
                 } else if (caractere == 8 || caractere == 127 || (isWindows && caractere == 224 && System.in.read() == 75)) {
-                    // Backspace ou Delete
                     if (senha.length() > 0) {
                         senha.deleteCharAt(senha.length() - 1);
-                        System.out.print("\b \b"); // Apaga o asterisco anterior
+                        System.out.print("\b \b"); 
                         System.out.flush();
                     }
                 } else if (caractere >= 32 && caractere < 127) {
-                    // Caractere imprimível
                     senha.append((char) caractere);
                     System.out.print('*');
                     System.out.flush();
                 }
             }
-            System.out.println(); // Nova linha após a senha
+            System.out.println();
         } catch (IOException e) {
-            // Se falhar completamente, usa o scanner normal (sem ocultar)
-            // Isso pode acontecer em alguns ambientes
             System.out.println();
             System.out.println("(Aviso: não foi possível ocultar a senha - usando modo normal)");
             return scanner.nextLine().trim();
