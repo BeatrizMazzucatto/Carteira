@@ -725,6 +725,12 @@ public class ConsoleApplication implements CommandLineRunner {
             mostrarListaAcoesEComprar(carteira);
             return;
         }
+        
+        // Se for venda, mostra lista de ações que o usuário possui
+        if (tipoTransacao == com.invest.model.TipoTransacao.VENDA) {
+            mostrarListaAcoesEVender(carteira);
+            return;
+        }
 
         System.out.print("Código do ativo (ex: PETR4) ou 0 para voltar: ");
         String codigoAtivo = scanner.nextLine().trim().toUpperCase();
@@ -1131,6 +1137,290 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Erro ao processar compra: " + e.getMessage());
             System.out.println();
+        }
+    }
+
+    /**
+     * Mostra lista de ações que o usuário possui e permite vender
+     */
+    private void mostrarListaAcoesEVender(Carteira carteira) {
+        // Recarrega a carteira do banco para garantir dados atualizados
+        carteira = carteiraService.getCarteiraById(carteira.getId());
+        
+        System.out.println();
+        System.out.println("AÇÕES DISPONÍVEIS PARA VENDA");
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println();
+
+        try {
+            // Busca os ativos da carteira que têm quantidade > 0
+            List<com.invest.model.Ativo> ativosCarteira = ativoRepository.findByCarteira(carteira);
+            List<com.invest.model.Ativo> ativosDisponiveis = new ArrayList<>();
+            
+            for (com.invest.model.Ativo ativo : ativosCarteira) {
+                if (ativo.getQuantidade() != null && ativo.getQuantidade().compareTo(BigDecimal.ZERO) > 0) {
+                    ativosDisponiveis.add(ativo);
+                }
+            }
+
+            if (ativosDisponiveis.isEmpty()) {
+                System.out.println("Você não possui ações para vender nesta carteira.");
+                System.out.println();
+                System.out.println("Pressione Enter para continuar...");
+                scanner.nextLine();
+                System.out.println();
+                return;
+            }
+
+            // Busca cotações atualizadas
+            Map<String, BigDecimal> cotacoes = googleSheetsService.getAllCotacoes();
+
+            // Ordenar por código
+            ativosDisponiveis.sort((a1, a2) -> a1.getCodigo().compareTo(a2.getCodigo()));
+
+            System.out.println("┌─────┬──────────────┬──────────────────────┬──────────────────────┬──────────────────────┐");
+            System.out.println("│ Op  │ Código       │ Quantidade          │ Preço Médio          │ Preço Atual          │");
+            System.out.println("├─────┼──────────────┼──────────────────────┼──────────────────────┼──────────────────────┤");
+
+            int index = 1;
+            Map<Integer, com.invest.model.Ativo> mapaOpcoes = new HashMap<>();
+            for (com.invest.model.Ativo ativo : ativosDisponiveis) {
+                mapaOpcoes.put(index, ativo);
+                BigDecimal precoAtual = cotacoes.getOrDefault(ativo.getCodigo(), ativo.getPrecoAtual());
+                if (precoAtual == null) {
+                    precoAtual = ativo.getPrecoCompra();
+                }
+                System.out.printf("│ %-3d │ %-12s │ %-20s │ R$ %-17s │ R$ %-17s │\n", 
+                    index, 
+                    ativo.getCodigo(), 
+                    formatarQuantidade(ativo.getQuantidade()),
+                    formatarValor(ativo.getPrecoCompra()),
+                    formatarValor(precoAtual));
+                index++;
+            }
+            System.out.println("└─────┴──────────────┴──────────────────────┴──────────────────────┴──────────────────────┘");
+            System.out.println();
+
+            System.out.println("Escolha a ação para vender (0 para voltar):");
+            System.out.print("Opção: ");
+            int opcao = lerInteiro();
+
+            if (opcao == 0) {
+                return;
+            }
+
+            if (!mapaOpcoes.containsKey(opcao)) {
+                System.out.println("Opção inválida!");
+                System.out.println();
+                return;
+            }
+
+            com.invest.model.Ativo ativoSelecionado = mapaOpcoes.get(opcao);
+            String codigoAtivo = ativoSelecionado.getCodigo();
+            BigDecimal quantidadeDisponivel = ativoSelecionado.getQuantidade();
+            BigDecimal precoMedio = ativoSelecionado.getPrecoCompra();
+            
+            // Busca preço atual do JSON ou usa o preço do ativo
+            BigDecimal precoAtual = cotacoes.getOrDefault(codigoAtivo, ativoSelecionado.getPrecoAtual());
+            if (precoAtual == null) {
+                precoAtual = precoMedio;
+            }
+
+            System.out.println();
+            System.out.println("Você selecionou: " + codigoAtivo);
+            System.out.println("Quantidade disponível: " + formatarQuantidade(quantidadeDisponivel));
+            System.out.println("Preço médio de compra: R$ " + formatarValor(precoMedio));
+            System.out.println("Preço atual: R$ " + formatarValor(precoAtual));
+            System.out.println();
+
+            System.out.println("Escolha o tipo de venda:");
+            System.out.println("1. Vender por quantidade de ações");
+            System.out.println("2. Vender por valor total (R$)");
+            System.out.println("0. Voltar");
+            System.out.print("Opção: ");
+
+            int tipoVendaOpcao = lerInteiro();
+            if (tipoVendaOpcao == 0) {
+                return;
+            }
+            
+            BigDecimal quantidade;
+            BigDecimal precoUnitario = precoAtual;
+
+            if (tipoVendaOpcao == 1) {
+                // Venda por quantidade
+                System.out.print("Quantidade de ações para vender (ou 0 para voltar): ");
+                quantidade = lerDecimal();
+                if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (quantidade.compareTo(BigDecimal.ZERO) == 0) {
+                        return;
+                    } else {
+                        System.out.println();
+                        System.out.println("Quantidade deve ser positiva!");
+                        System.out.println();
+                        return;
+                    }
+                }
+                
+                // Valida se tem quantidade suficiente
+                if (quantidade.compareTo(quantidadeDisponivel) > 0) {
+                    System.out.println();
+                    System.out.println("⚠️ QUANTIDADE INSUFICIENTE!");
+                    System.out.println("═══════════════════════════════════════════════════════════════");
+                    System.out.println();
+                    System.out.println("Quantidade disponível: " + formatarQuantidade(quantidadeDisponivel));
+                    System.out.println("Quantidade solicitada: " + formatarQuantidade(quantidade));
+                    System.out.println("Quantidade em falta: " + formatarQuantidade(quantidade.subtract(quantidadeDisponivel)));
+                    System.out.println();
+                    System.out.println();
+                    System.out.println("Opções:");
+                    System.out.println("1. Ajustar quantidade para o disponível");
+                    System.out.println("0. Cancelar venda");
+                    System.out.print("Opção: ");
+                    
+                    int opcaoQuantidade = lerInteiro();
+                    System.out.println();
+                    
+                    if (opcaoQuantidade == 1) {
+                        quantidade = quantidadeDisponivel;
+                        System.out.println();
+                        System.out.println("✅ Quantidade ajustada para " + formatarQuantidade(quantidade));
+                        System.out.println();
+                    } else {
+                        System.out.println("Venda cancelada.");
+                        System.out.println();
+                        return;
+                    }
+                }
+            } else if (tipoVendaOpcao == 2) {
+                // Venda por valor total
+                System.out.print("Valor total a receber (R$) ou 0 para voltar: ");
+                BigDecimal valorTotal = lerDecimal();
+                if (valorTotal.compareTo(BigDecimal.ZERO) <= 0) {
+                    if (valorTotal.compareTo(BigDecimal.ZERO) == 0) {
+                        return;
+                    } else {
+                        System.out.println();
+                        System.out.println("Valor deve ser positivo!");
+                        System.out.println();
+                        return;
+                    }
+                }
+                quantidade = valorTotal.divide(precoAtual, 4, java.math.RoundingMode.DOWN);
+                System.out.println("Quantidade calculada: " + formatarQuantidade(quantidade));
+                
+                // Valida se tem quantidade suficiente
+                if (quantidade.compareTo(quantidadeDisponivel) > 0) {
+                    System.out.println();
+                    System.out.println("⚠️ QUANTIDADE INSUFICIENTE!");
+                    System.out.println("═══════════════════════════════════════════════════════════════");
+                    System.out.println();
+                    System.out.println("Quantidade disponível: " + formatarQuantidade(quantidadeDisponivel));
+                    System.out.println("Quantidade necessária: " + formatarQuantidade(quantidade));
+                    System.out.println();
+                    System.out.println("Valor máximo que pode receber: R$ " + 
+                        formatarValor(quantidadeDisponivel.multiply(precoAtual)));
+                    System.out.println();
+                    System.out.println();
+                    System.out.println("Opções:");
+                    System.out.println("1. Ajustar valor para o máximo disponível");
+                    System.out.println("0. Cancelar venda");
+                    System.out.print("Opção: ");
+                    
+                    int opcaoValor = lerInteiro();
+                    System.out.println();
+                    
+                    if (opcaoValor == 1) {
+                        valorTotal = quantidadeDisponivel.multiply(precoAtual);
+                        quantidade = quantidadeDisponivel;
+                        System.out.println();
+                        System.out.println("✅ Valor ajustado para R$ " + formatarValor(valorTotal));
+                        System.out.println("Quantidade: " + formatarQuantidade(quantidade));
+                        System.out.println();
+                    } else {
+                        System.out.println("Venda cancelada.");
+                        System.out.println();
+                        return;
+                    }
+                }
+            } else {
+                System.out.println("Opção inválida!");
+                System.out.println();
+                return;
+            }
+
+            // Calcula taxas automaticamente (0,5% do valor total da transação)
+            BigDecimal valorTotal = quantidade.multiply(precoAtual);
+            BigDecimal taxas = calcularTaxasCorretagem(valorTotal);
+            BigDecimal valorLiquido = valorTotal.subtract(taxas);
+
+            System.out.print("Observações (opcional): ");
+            String observacoes = scanner.nextLine().trim();
+
+            // Confirmar venda
+            System.out.println();
+            System.out.println();
+            System.out.println("RESUMO DA VENDA:");
+            System.out.println("═══════════════════════════════════════════════════════════════");
+            System.out.println();
+            System.out.println("Ação: " + codigoAtivo);
+            System.out.println("Quantidade: " + formatarQuantidade(quantidade));
+            System.out.println("Preço unitário: R$ " + formatarValor(precoAtual));
+            System.out.println("Preço médio de compra: R$ " + formatarValor(precoMedio));
+            System.out.println();
+            System.out.println("Valor total: R$ " + formatarValor(valorTotal));
+            System.out.println("Taxas/corretagem (calculadas automaticamente): R$ " + formatarValor(taxas));
+            System.out.println("Valor líquido a receber: R$ " + formatarValor(valorLiquido));
+            System.out.println();
+            
+            // Calcula lucro/prejuízo
+            BigDecimal valorInvestido = quantidade.multiply(precoMedio);
+            BigDecimal lucroPrejuizo = valorLiquido.subtract(valorInvestido);
+            String sinal = lucroPrejuizo.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+            System.out.println("Valor investido (custo): R$ " + formatarValor(valorInvestido));
+            System.out.println("Lucro/Prejuízo: R$ " + sinal + formatarValor(lucroPrejuizo));
+            System.out.println();
+            System.out.println();
+            System.out.print("Confirmar venda? (S/N): ");
+            String confirmacao = scanner.nextLine().trim().toUpperCase();
+
+            if (!confirmacao.equals("S")) {
+                System.out.println();
+                System.out.println("Venda cancelada.");
+                System.out.println();
+                System.out.println();
+                return;
+            }
+
+            // Registrar venda
+            com.invest.dto.TransacaoRequest request = new com.invest.dto.TransacaoRequest();
+            request.setTipoTransacao(com.invest.model.TipoTransacao.VENDA);
+            request.setCodigoAtivo(codigoAtivo);
+            request.setNomeAtivo(ativoSelecionado.getNome());
+            request.setTipoAtivo(ativoSelecionado.getTipo());
+            request.setQuantidade(quantidade);
+            request.setPrecoUnitario(precoUnitario);
+            request.setTaxasCorretagem(taxas);
+            request.setObservacoes(observacoes);
+
+            com.invest.model.Transacao transacao = transacaoService.createTransacao(carteira.getId(), request);
+
+            System.out.println();
+            System.out.println();
+            System.out.println("✅ Venda registrada com sucesso!");
+            System.out.println();
+            System.out.println("Valor total: R$ " + formatarValor(transacao.getValorTotal()));
+            System.out.println("Valor líquido recebido: R$ " + formatarValor(transacao.getValorLiquido()));
+            System.out.println();
+            System.out.println();
+
+        } catch (Exception e) {
+            System.out.println();
+            System.out.println("Erro ao processar venda: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println();
+            System.out.println("Pressione Enter para continuar...");
+            scanner.nextLine();
         }
     }
 
@@ -1956,6 +2246,10 @@ public class ConsoleApplication implements CommandLineRunner {
             BigDecimal valorTotalInvestido = BigDecimal.ZERO;
             BigDecimal valorTotalVendas = BigDecimal.ZERO;
             BigDecimal valorTotalTaxas = BigDecimal.ZERO;
+            BigDecimal taxasCompras = BigDecimal.ZERO;
+            BigDecimal taxasVendas = BigDecimal.ZERO;
+            BigDecimal quantidadeTotalComprada = BigDecimal.ZERO;
+            BigDecimal quantidadeTotalVendida = BigDecimal.ZERO;
             
             System.out.println("CRIAÇÃO DA CARTEIRA:");
             System.out.println("───────────────────────────────────────────────────────────");
@@ -1983,15 +2277,19 @@ public class ConsoleApplication implements CommandLineRunner {
                     if (transacao.getTipoTransacao() == com.invest.model.TipoTransacao.COMPRA) {
                         valorTotalInvestido = valorTotalInvestido.add(transacao.getValorTotal());
                         if (transacao.getTaxasCorretagem() != null) {
-                            valorTotalTaxas = valorTotalTaxas.add(transacao.getTaxasCorretagem());
-                            System.out.println("   Taxas: R$ " + formatarValor(transacao.getTaxasCorretagem()));
+                            BigDecimal taxa = transacao.getTaxasCorretagem();
+                            valorTotalTaxas = valorTotalTaxas.add(taxa);
+                            taxasCompras = taxasCompras.add(taxa);
+                            System.out.println("   Taxas: R$ " + formatarValor(taxa));
                         }
                         System.out.println("   → Compra realizada");
                     } else if (transacao.getTipoTransacao() == com.invest.model.TipoTransacao.VENDA) {
                         valorTotalVendas = valorTotalVendas.add(transacao.getValorTotal());
                         if (transacao.getTaxasCorretagem() != null) {
-                            valorTotalTaxas = valorTotalTaxas.add(transacao.getTaxasCorretagem());
-                            System.out.println("   Taxas: R$ " + formatarValor(transacao.getTaxasCorretagem()));
+                            BigDecimal taxa = transacao.getTaxasCorretagem();
+                            valorTotalTaxas = valorTotalTaxas.add(taxa);
+                            taxasVendas = taxasVendas.add(taxa);
+                            System.out.println("   Taxas: R$ " + formatarValor(taxa));
                         }
                         System.out.println("   → Venda realizada");
                     }
@@ -2027,7 +2325,13 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("Total de taxas: R$ " + formatarValor(valorTotalTaxas));
             System.out.println();
             
-            BigDecimal valorLiquidoInvestido = valorTotalInvestido.subtract(valorTotalVendas).add(valorTotalTaxas);
+            // Cálculo correto do valor líquido investido:
+            // - Compras aumentam o investimento (incluindo taxas)
+            // - Vendas reduzem o investimento (descontando taxas, pois você recebe menos)
+            // Fórmula: (compras + taxas de compras) - (vendas - taxas de vendas)
+            BigDecimal valorInvestidoComTaxas = valorTotalInvestido.add(taxasCompras);
+            BigDecimal valorRecebidoVendas = valorTotalVendas.subtract(taxasVendas);
+            BigDecimal valorLiquidoInvestido = valorInvestidoComTaxas.subtract(valorRecebidoVendas);
             System.out.println("Valor líquido investido: R$ " + formatarValor(valorLiquidoInvestido));
             System.out.println("Valor atual de mercado: R$ " + formatarValor(carteira.getValorAtual()));
             System.out.println();
