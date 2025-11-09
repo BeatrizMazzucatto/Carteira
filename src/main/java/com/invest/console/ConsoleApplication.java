@@ -84,7 +84,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("Escolha uma opção:");
             System.out.println("1. Fazer Login");
             System.out.println("2. Criar Nova Conta");
-            System.out.println("3. Sair");
+            System.out.println("0. Sair");
             System.out.print("Opção: ");
 
             int opcao = lerInteiro();
@@ -97,7 +97,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 case 2:
                     criarNovaConta();
                     break;
-                case 3:
+                case 0:
                     System.out.println("Obrigado por usar o Sistema de Carteiras!");
                     System.exit(0);
                     break;
@@ -329,7 +329,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("4. Relatório de Rentabilidade Total");
             System.out.println("5. Consultar Ativos");
             System.out.println("6. Configurações");
-            System.out.println("7. Sair");
+            System.out.println("0. Sair");
             System.out.println();
             System.out.print("Opção: ");
 
@@ -355,7 +355,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 case 6:
                     mostrarConfiguracoes();
                     break;
-                case 7:
+                case 0:
                     System.out.println("Obrigado por usar o Sistema de Carteiras!");
                     System.exit(0);
                     break;
