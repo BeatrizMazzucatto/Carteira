@@ -219,7 +219,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("1. Minhas Carteiras");
             System.out.println("2. Nova Carteira");
             System.out.println("3. Registrar Transação");
-            System.out.println("4. Relatórios de Rentabilidade");
+            System.out.println("4. Relatório de Rentabilidade Total");
             System.out.println("5. Consultar Ativos");
             System.out.println("6. Configurações");
             System.out.println("7. Sair");
@@ -955,11 +955,11 @@ public class ConsoleApplication implements CommandLineRunner {
     }
 
     /**
-     * Mostra relatórios de rentabilidade
+     * Mostra relatório consolidado de rentabilidade de todas as carteiras
      */
     private void mostrarRelatorios() {
-        System.out.println("RELATÓRIOS DE RENTABILIDADE");
-        System.out.println("══════════════════════════════");
+        System.out.println("RELATÓRIO DE RENTABILIDADE - CONSOLIDADO");
+        System.out.println("═══════════════════════════════════════════════════════════════");
         System.out.println();
 
         try {
@@ -968,31 +968,159 @@ public class ConsoleApplication implements CommandLineRunner {
             if (carteiras.isEmpty()) {
                 System.out.println("Você não possui carteiras.");
                 System.out.println();
+                System.out.println("Pressione Enter para continuar...");
+                scanner.nextLine();
                 return;
             }
 
-            System.out.println("Escolha a carteira para relatório:");
-            for (int i = 0; i < carteiras.size(); i++) {
-                System.out.println((i + 1) + ". " + carteiras.get(i).getNome());
-            }
-            System.out.println("0. Voltar");
-            System.out.print("Opção: ");
+            // Variáveis para consolidar todas as carteiras
+            BigDecimal valorTotalInvestidoGeral = BigDecimal.ZERO;
+            BigDecimal valorAtualMercadoGeral = BigDecimal.ZERO;
+            BigDecimal valorAtualComProventosGeral = BigDecimal.ZERO;
+            BigDecimal totalComprasGeral = BigDecimal.ZERO;
+            BigDecimal totalVendasGeral = BigDecimal.ZERO;
+            BigDecimal totalProventosGeral = BigDecimal.ZERO;
+            BigDecimal totalTaxasGeral = BigDecimal.ZERO;
+            BigDecimal totalImpostosGeral = BigDecimal.ZERO;
+            int totalCarteiras = carteiras.size();
+            int totalAtivos = 0;
+            int ativosPositivos = 0;
+            int ativosNegativos = 0;
 
-            int opcao = lerInteiro();
-            if (opcao == 0) {
-                return;
-            }
-            if (opcao < 1 || opcao > carteiras.size()) {
-                System.out.println("Carteira inválida!");
-                return;
+            System.out.println("RESUMO POR CARTEIRA:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println();
+
+            // Calcula rentabilidade de cada carteira e consolida
+            for (Carteira carteira : carteiras) {
+                try {
+                    com.invest.dto.CarteiraRentabilidadeResponse rentabilidade = 
+                        rentabilidadeService.calcularRentabilidadeCarteira(carteira.getId());
+
+                    BigDecimal valorInvestido = rentabilidade.getValorTotalInvestido() != null 
+                        ? rentabilidade.getValorTotalInvestido() : BigDecimal.ZERO;
+                    BigDecimal valorMercado = rentabilidade.getValorAtualMercado() != null 
+                        ? rentabilidade.getValorAtualMercado() : BigDecimal.ZERO;
+                    BigDecimal valorComProventos = rentabilidade.getValorAtualComProventos() != null 
+                        ? rentabilidade.getValorAtualComProventos() : BigDecimal.ZERO;
+                    BigDecimal compras = rentabilidade.getValorTotalCompras() != null 
+                        ? rentabilidade.getValorTotalCompras() : BigDecimal.ZERO;
+                    BigDecimal vendas = rentabilidade.getValorTotalVendas() != null 
+                        ? rentabilidade.getValorTotalVendas() : BigDecimal.ZERO;
+                    BigDecimal proventos = rentabilidade.getValorTotalProventos() != null 
+                        ? rentabilidade.getValorTotalProventos() : BigDecimal.ZERO;
+                    BigDecimal taxas = rentabilidade.getTotalTaxasCorretagem() != null 
+                        ? rentabilidade.getTotalTaxasCorretagem() : BigDecimal.ZERO;
+                    BigDecimal impostos = rentabilidade.getTotalImpostos() != null 
+                        ? rentabilidade.getTotalImpostos() : BigDecimal.ZERO;
+
+                    valorTotalInvestidoGeral = valorTotalInvestidoGeral.add(valorInvestido);
+                    valorAtualMercadoGeral = valorAtualMercadoGeral.add(valorMercado);
+                    valorAtualComProventosGeral = valorAtualComProventosGeral.add(valorComProventos);
+                    totalComprasGeral = totalComprasGeral.add(compras);
+                    totalVendasGeral = totalVendasGeral.add(vendas);
+                    totalProventosGeral = totalProventosGeral.add(proventos);
+                    totalTaxasGeral = totalTaxasGeral.add(taxas);
+                    totalImpostosGeral = totalImpostosGeral.add(impostos);
+
+                    totalAtivos += rentabilidade.getTotalAtivos() != null ? rentabilidade.getTotalAtivos() : 0;
+                    ativosPositivos += rentabilidade.getAtivosPositivos() != null ? rentabilidade.getAtivosPositivos() : 0;
+                    ativosNegativos += rentabilidade.getAtivosNegativos() != null ? rentabilidade.getAtivosNegativos() : 0;
+
+                    // Exibe resumo da carteira
+                    System.out.println("📊 " + carteira.getNome() + ":");
+                    System.out.println("   Investido: R$ " + formatarValor(valorInvestido));
+                    System.out.println("   Valor Atual: R$ " + formatarValor(valorMercado));
+                    
+                    BigDecimal rentabilidadeCarteira = valorMercado.subtract(valorInvestido);
+                    BigDecimal percentualCarteira = BigDecimal.ZERO;
+                    if (valorInvestido.compareTo(BigDecimal.ZERO) > 0) {
+                        percentualCarteira = rentabilidadeCarteira
+                            .divide(valorInvestido, 4, java.math.RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal("100"));
+                    }
+                    String sinal = rentabilidadeCarteira.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+                    System.out.println("   Rentabilidade: R$ " + sinal + formatarValor(rentabilidadeCarteira) + 
+                                     " (" + sinal + formatarPercentual(percentualCarteira) + "%)");
+                    System.out.println();
+
+                } catch (Exception e) {
+                    System.out.println("⚠️ Erro ao calcular rentabilidade da carteira '" + carteira.getNome() + "': " + e.getMessage());
+                    System.out.println();
+                }
             }
 
-            Carteira carteira = carteiras.get(opcao - 1);
-            mostrarRentabilidadeCarteira(carteira);
+            System.out.println();
+            System.out.println("═══════════════════════════════════════════════════════════════");
+            System.out.println("RESUMO GERAL CONSOLIDADO");
+            System.out.println("═══════════════════════════════════════════════════════════════");
+            System.out.println();
+
+            System.out.println("INFORMAÇÕES GERAIS:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println("Total de Carteiras: " + totalCarteiras);
+            System.out.println("Total de Ativos: " + totalAtivos);
+            System.out.println("Ativos com Rentabilidade Positiva: " + ativosPositivos);
+            System.out.println("Ativos com Rentabilidade Negativa: " + ativosNegativos);
+            System.out.println();
+
+            System.out.println("VALORES CONSOLIDADOS:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println("Valor Total Investido: R$ " + formatarValor(valorTotalInvestidoGeral));
+            System.out.println("Valor Atual de Mercado: R$ " + formatarValor(valorAtualMercadoGeral));
+            System.out.println("Valor com Proventos: R$ " + formatarValor(valorAtualComProventosGeral));
+            System.out.println();
+
+            System.out.println("MOVIMENTAÇÃO:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println("Total de Compras: R$ " + formatarValor(totalComprasGeral));
+            System.out.println("Total de Vendas: R$ " + formatarValor(totalVendasGeral));
+            System.out.println("Total de Proventos: R$ " + formatarValor(totalProventosGeral));
+            System.out.println();
+
+            System.out.println("CUSTOS:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            System.out.println("Total de Taxas: R$ " + formatarValor(totalTaxasGeral));
+            System.out.println("Total de Impostos: R$ " + formatarValor(totalImpostosGeral));
+            BigDecimal totalCustos = totalTaxasGeral.add(totalImpostosGeral);
+            System.out.println("Total de Custos: R$ " + formatarValor(totalCustos));
+            System.out.println();
+
+            System.out.println("RENTABILIDADE CONSOLIDADA:");
+            System.out.println("───────────────────────────────────────────────────────────");
+            BigDecimal rentabilidadeBruta = valorAtualMercadoGeral.subtract(valorTotalInvestidoGeral);
+            BigDecimal rentabilidadeLiquida = valorAtualComProventosGeral.subtract(valorTotalInvestidoGeral).subtract(totalCustos);
+            
+            BigDecimal percentualBruto = BigDecimal.ZERO;
+            BigDecimal percentualLiquido = BigDecimal.ZERO;
+            if (valorTotalInvestidoGeral.compareTo(BigDecimal.ZERO) > 0) {
+                percentualBruto = rentabilidadeBruta
+                    .divide(valorTotalInvestidoGeral, 4, java.math.RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"));
+                percentualLiquido = rentabilidadeLiquida
+                    .divide(valorTotalInvestidoGeral, 4, java.math.RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"));
+            }
+
+            String sinalBruto = rentabilidadeBruta.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+            String sinalLiquido = rentabilidadeLiquida.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+            
+            System.out.println("Rentabilidade Bruta: R$ " + sinalBruto + formatarValor(rentabilidadeBruta) + 
+                             " (" + sinalBruto + formatarPercentual(percentualBruto) + "%)");
+            System.out.println("Rentabilidade Líquida: R$ " + sinalLiquido + formatarValor(rentabilidadeLiquida) + 
+                             " (" + sinalLiquido + formatarPercentual(percentualLiquido) + "%)");
+            System.out.println();
+
+            System.out.println("Pressione Enter para continuar...");
+            scanner.nextLine();
+            System.out.println();
 
         } catch (Exception e) {
             System.out.println("Erro ao gerar relatório: " + e.getMessage());
+            e.printStackTrace();
             System.out.println();
+            System.out.println("Pressione Enter para continuar...");
+            scanner.nextLine();
         }
     }
 
