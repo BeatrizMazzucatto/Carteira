@@ -579,7 +579,6 @@ public class ConsoleApplication implements CommandLineRunner {
         System.out.println("Tipo de transação:");
         System.out.println("1. Compra");
         System.out.println("2. Venda");
-        System.out.println("3. Provento/Dividendo");
         System.out.println("0. Voltar");
         System.out.print("Opção: ");
 
@@ -1648,7 +1647,6 @@ public class ConsoleApplication implements CommandLineRunner {
         switch (opcao) {
             case 1: return com.invest.model.TipoTransacao.COMPRA;
             case 2: return com.invest.model.TipoTransacao.VENDA;
-            case 3: return com.invest.model.TipoTransacao.PROVENTO;
             default: return com.invest.model.TipoTransacao.COMPRA;
         }
     }
