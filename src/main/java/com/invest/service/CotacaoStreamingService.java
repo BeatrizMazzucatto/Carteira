@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.invest.dto.CotacaoDTO;
@@ -21,9 +20,6 @@ public class CotacaoStreamingService {
 
     @Autowired
     private GoogleSheetsService googleSheetsService;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
 
     private Map<String, CotacaoDTO> cotacoesCache = new HashMap<>();
 

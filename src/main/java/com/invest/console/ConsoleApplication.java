@@ -67,6 +67,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
     private Scanner scanner = new Scanner(System.in);
     private Investidor investidorLogado = null;
+    @SuppressWarnings("unused") // Token JWT armazenado para possível uso futuro em requisições autenticadas
     private String jwtToken = null;
 
     @Override
@@ -177,7 +178,7 @@ public class ConsoleApplication implements CommandLineRunner {
                         return;
                     default:
                         System.out.println("Opção inválida!");
-                        System.out.println();
+                System.out.println();
                 }
             }
         } catch (Exception e) {
@@ -742,7 +743,7 @@ public class ConsoleApplication implements CommandLineRunner {
             mostrarListaAcoesEComprar(carteira);
             return;
         }
-        
+
         // Se for venda, mostra lista de ações que o usuário possui
         if (tipoTransacao == com.invest.model.TipoTransacao.VENDA) {
             mostrarListaAcoesEVender(carteira);
@@ -919,37 +920,37 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             // Se houver erro, permite digitar manualmente
             System.out.print("Código do ativo (ex: PETR4) ou 0 para voltar: ");
-            String codigoAtivo = scanner.nextLine().trim().toUpperCase();
+        String codigoAtivo = scanner.nextLine().trim().toUpperCase();
             if (codigoAtivo.equals("0")) {
                 return;
             }
 
             System.out.print("Nome do ativo (ex: Petrobras) ou 0 para voltar: ");
-            String nomeAtivo = scanner.nextLine().trim();
+        String nomeAtivo = scanner.nextLine().trim();
             if (nomeAtivo.equals("0")) {
                 return;
             }
 
-            System.out.println();
-            System.out.println("Tipo do ativo:");
-            System.out.println("1. Ação");
-            System.out.println("2. FII");
-            System.out.println("3. ETF");
-            System.out.println("4. CDB");
-            System.out.println("5. LCI/LCA");
-            System.out.println("6. Tesouro");
-            System.out.println("7. Criptomoeda");
+        System.out.println();
+        System.out.println("Tipo do ativo:");
+        System.out.println("1. Ação");
+        System.out.println("2. FII");
+        System.out.println("3. ETF");
+        System.out.println("4. CDB");
+        System.out.println("5. LCI/LCA");
+        System.out.println("6. Tesouro");
+        System.out.println("7. Criptomoeda");
             System.out.println("0. Voltar");
-            System.out.print("Opção: ");
+        System.out.print("Opção: ");
 
-            int ativoOpcao = lerInteiro();
+        int ativoOpcao = lerInteiro();
             if (ativoOpcao == 0) {
                 return;
             }
-            com.invest.model.TipoAtivo tipoAtivo = obterTipoAtivo(ativoOpcao);
+        com.invest.model.TipoAtivo tipoAtivo = obterTipoAtivo(ativoOpcao);
 
             System.out.print("Quantidade (ou 0 para voltar): ");
-            BigDecimal quantidade = lerDecimal();
+        BigDecimal quantidade = lerDecimal();
             if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
                 if (quantidade.compareTo(BigDecimal.ZERO) == 0) {
                     System.out.println("Operação cancelada.");
@@ -961,7 +962,7 @@ public class ConsoleApplication implements CommandLineRunner {
             }
 
             System.out.print("Preço unitário (R$) ou 0 para voltar: ");
-            BigDecimal precoUnitario = lerDecimal();
+        BigDecimal precoUnitario = lerDecimal();
             if (precoUnitario.compareTo(BigDecimal.ZERO) <= 0) {
                 if (precoUnitario.compareTo(BigDecimal.ZERO) == 0) {
                     System.out.println("Operação cancelada.");
@@ -972,37 +973,37 @@ public class ConsoleApplication implements CommandLineRunner {
                 }
             }
 
-            // Calcula taxas automaticamente (0,5% do valor total da transação)
-            BigDecimal valorTotal = quantidade.multiply(precoUnitario);
-            BigDecimal taxas = calcularTaxasCorretagem(valorTotal);
-            System.out.println("Taxas/corretagem calculadas automaticamente: R$ " + formatarValor(taxas));
+        // Calcula taxas automaticamente (0,5% do valor total da transação)
+        BigDecimal valorTotal = quantidade.multiply(precoUnitario);
+        BigDecimal taxas = calcularTaxasCorretagem(valorTotal);
+        System.out.println("Taxas/corretagem calculadas automaticamente: R$ " + formatarValor(taxas));
 
-            System.out.print("Observações (opcional): ");
-            String observacoes = scanner.nextLine().trim();
+        System.out.print("Observações (opcional): ");
+        String observacoes = scanner.nextLine().trim();
 
-            try {
-                com.invest.dto.TransacaoRequest request = new com.invest.dto.TransacaoRequest();
-                request.setTipoTransacao(tipoTransacao);
-                request.setCodigoAtivo(codigoAtivo);
-                request.setNomeAtivo(nomeAtivo);
-                request.setTipoAtivo(tipoAtivo);
-                request.setQuantidade(quantidade);
-                request.setPrecoUnitario(precoUnitario);
-                request.setTaxasCorretagem(taxas);
-                request.setObservacoes(observacoes);
+        try {
+            com.invest.dto.TransacaoRequest request = new com.invest.dto.TransacaoRequest();
+            request.setTipoTransacao(tipoTransacao);
+            request.setCodigoAtivo(codigoAtivo);
+            request.setNomeAtivo(nomeAtivo);
+            request.setTipoAtivo(tipoAtivo);
+            request.setQuantidade(quantidade);
+            request.setPrecoUnitario(precoUnitario);
+            request.setTaxasCorretagem(taxas);
+            request.setObservacoes(observacoes);
 
-                com.invest.model.Transacao transacao = transacaoService.createTransacao(carteira.getId(), request);
+            com.invest.model.Transacao transacao = transacaoService.createTransacao(carteira.getId(), request);
 
-                System.out.println();
-                System.out.println("Transação registrada com sucesso!");
-                System.out.println("Valor total: R$ " + formatarValor(transacao.getValorTotal()));
-                System.out.println("Valor líquido: R$ " + formatarValor(transacao.getValorLiquido()));
-                System.out.println();
+            System.out.println();
+            System.out.println("Transação registrada com sucesso!");
+            System.out.println("Valor total: R$ " + formatarValor(transacao.getValorTotal()));
+            System.out.println("Valor líquido: R$ " + formatarValor(transacao.getValorLiquido()));
+            System.out.println();
 
             } catch (Exception ex) {
-                System.out.println();
+            System.out.println();
                 System.out.println("Erro ao registrar transação: " + ex.getMessage());
-                System.out.println();
+            System.out.println();
             }
         }
     }
@@ -1704,7 +1705,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 } catch (Exception e) {
                     System.out.println("⚠️ Erro ao calcular rentabilidade da carteira '" + carteira.getNome() + "': " + e.getMessage());
                     System.out.println();
-                }
+            }
             }
 
             System.out.println();
@@ -2191,8 +2192,8 @@ public class ConsoleApplication implements CommandLineRunner {
             }
             if (investidorLogado.getDataAtualizacao() != null) {
                 System.out.println("Última Atualização: " + investidorLogado.getDataAtualizacao().format(formatter));
-            }
-            
+        }
+
             System.out.println();
             
             // Calcula valor total investido em todas as carteiras
@@ -2251,7 +2252,7 @@ public class ConsoleApplication implements CommandLineRunner {
                         System.out.println("    Valor Investido: R$ " + formatarValor(valorInvestidoCarteira));
                         System.out.println("    Valor Atual: R$ " + formatarValor(valorMercadoCarteira));
                         System.out.println();
-                    } catch (Exception e) {
+        } catch (Exception e) {
                         System.out.println("  • " + carteira.getNome() + ": Erro ao calcular rentabilidade");
                         System.out.println();
                     }
@@ -2817,7 +2818,7 @@ public class ConsoleApplication implements CommandLineRunner {
             // Configura o terminal para modo raw (se possível)
             String os = System.getProperty("os.name").toLowerCase();
             boolean isWindows = os.contains("win");
-
+            
             int caractere;
             System.out.flush(); // Garante que o prompt foi exibido
             
