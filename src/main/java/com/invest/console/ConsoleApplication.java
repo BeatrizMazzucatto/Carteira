@@ -135,13 +135,120 @@ public class ConsoleApplication implements CommandLineRunner {
             } else {
                 System.out.println();
                 System.out.println("Email ou senha incorretos!");
-                System.out.println("Verifique os dados ou crie uma nova conta.");
                 System.out.println();
+                System.out.println("Opções:");
+                System.out.println("1. Tentar novamente");
+                System.out.println("2. Esqueci a senha");
+                System.out.println("0. Voltar ao menu inicial");
+                System.out.print("Opção: ");
+                
+                int opcao = lerInteiro();
+                System.out.println();
+                
+                switch (opcao) {
+                    case 1:
+                        // Tenta novamente (recursivo)
+                        fazerLogin();
+                        break;
+                    case 2:
+                        // Esqueci a senha
+                        recuperarSenha(email);
+                        break;
+                    case 0:
+                        // Volta ao menu inicial
+                        return;
+                    default:
+                        System.out.println("Opção inválida!");
+                        System.out.println();
+                }
             }
         } catch (Exception e) {
             System.out.println();
             System.out.println("Erro ao fazer login: " + e.getMessage());
             System.out.println();
+        }
+    }
+
+    /**
+     * Recupera/redefine a senha do investidor
+     */
+    private void recuperarSenha(String email) {
+        System.out.println("RECUPERAÇÃO DE SENHA");
+        System.out.println("═══════════════════════════════════════════════════════════════");
+        System.out.println();
+        
+        // Se o email não foi fornecido, pede
+        if (email == null || email.isEmpty()) {
+            System.out.print("Digite o email da conta: ");
+            email = scanner.nextLine().trim();
+        }
+        
+        try {
+            // Verifica se o email existe
+            java.util.Optional<com.invest.model.Investidor> investidorOpt = 
+                investidorService.getInvestidorByEmail(email);
+            
+            if (investidorOpt.isEmpty()) {
+                System.out.println();
+                System.out.println("Email não encontrado no sistema!");
+                System.out.println("Verifique o email digitado ou crie uma nova conta.");
+                System.out.println();
+                System.out.println("Pressione Enter para continuar...");
+                scanner.nextLine();
+                return;
+            }
+            
+            com.invest.model.Investidor investidor = investidorOpt.get();
+            
+            System.out.println();
+            System.out.println("Email encontrado: " + investidor.getEmail());
+            System.out.println("Nome: " + investidor.getNome());
+            System.out.println();
+            System.out.println("Você pode redefinir sua senha agora.");
+            System.out.println();
+            
+            System.out.print("Nova senha (mínimo 4 caracteres): ");
+            String novaSenha = lerSenha();
+            
+            if (novaSenha.isEmpty()) {
+                System.out.println("Senha não pode ser vazia!");
+                System.out.println();
+                return;
+            }
+            
+            if (novaSenha.length() < 4) {
+                System.out.println("Senha deve ter no mínimo 4 caracteres!");
+                System.out.println();
+                return;
+            }
+            
+            System.out.print("Confirme a nova senha: ");
+            String confirmacaoSenha = lerSenha();
+            
+            if (!novaSenha.equals(confirmacaoSenha)) {
+                System.out.println();
+                System.out.println("As senhas não coincidem! Tente novamente.");
+                System.out.println();
+                return;
+            }
+            
+            // Atualiza a senha
+            investidor.setSenha(novaSenha);
+            investidorService.updateInvestidor(investidor.getId(), investidor);
+            
+            System.out.println();
+            System.out.println("✅ Senha redefinida com sucesso!");
+            System.out.println("Agora você pode fazer login com a nova senha.");
+            System.out.println();
+            System.out.println("Pressione Enter para continuar...");
+            scanner.nextLine();
+            
+        } catch (Exception e) {
+            System.out.println();
+            System.out.println("Erro ao recuperar senha: " + e.getMessage());
+            System.out.println();
+            System.out.println("Pressione Enter para continuar...");
+            scanner.nextLine();
         }
     }
 
@@ -373,7 +480,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("3. Ver Transações");
             System.out.println("4. Ver Ativos com Rentabilidade");
             System.out.println("5. Editar Carteira");
-            System.out.println("6. Voltar");
+            System.out.println("0. Voltar");
             System.out.println();
             System.out.print("Opção: ");
 
@@ -396,7 +503,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 case 5:
                     editarCarteira(carteira);
                     break;
-                case 6:
+                case 0:
                     return;
                 default:
                     System.out.println("Opção inválida! Tente novamente.");
@@ -817,7 +924,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 System.out.println("Opções:");
                 System.out.println("1. Ajustar valor da compra para o saldo disponível");
                 System.out.println("2. Alterar valor inicial da carteira e tentar novamente");
-                System.out.println("3. Cancelar compra");
+                System.out.println("0. Cancelar compra");
                 System.out.print("Opção: ");
                 
                 int opcaoSaldo = lerInteiro();
@@ -896,8 +1003,12 @@ public class ConsoleApplication implements CommandLineRunner {
                         System.out.println();
                         return;
                     }
-                } else {
+                } else if (opcaoSaldo == 0) {
                     System.out.println("Compra cancelada.");
+                    System.out.println();
+                    return;
+                } else {
+                    System.out.println("Opção inválida!");
                     System.out.println();
                     return;
                 }
@@ -1427,7 +1538,7 @@ public class ConsoleApplication implements CommandLineRunner {
         System.out.println();
         System.out.println("1. Alterar Senha");
         System.out.println("2. Dados Pessoais");
-        System.out.println("3. Voltar");
+        System.out.println("0. Voltar");
         System.out.println();
         System.out.print("Opção: ");
 
@@ -1441,7 +1552,7 @@ public class ConsoleApplication implements CommandLineRunner {
             case 2:
                 verDadosPessoaisEValorInvestido();
                 break;
-            case 3:
+            case 0:
                 return;
             default:
                 System.out.println("Opção inválida!");
@@ -1629,7 +1740,7 @@ public class ConsoleApplication implements CommandLineRunner {
         System.out.println("3. Alterar Objetivo");
         System.out.println("4.  Alterar Perfil de Risco");
         System.out.println("5. Alterar Valor Inicial");
-        System.out.println("6. Voltar");
+        System.out.println("0. Voltar");
         System.out.println();
         System.out.print("Opção: ");
 
@@ -1696,7 +1807,7 @@ public class ConsoleApplication implements CommandLineRunner {
                     }
                     request.setValorInicial(novoValor);
                     break;
-                case 6:
+                case 0:
                     return;
                 default:
                     System.out.println("Opção inválida!");
