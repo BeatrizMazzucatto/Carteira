@@ -469,9 +469,12 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("Objetivo: " + (carteira.getObjetivo() != null ? carteira.getObjetivo().getDescricao() : "N/A"));
             System.out.println("Prazo: " + (carteira.getPrazo() != null ? carteira.getPrazo().getDescricao() : "N/A"));
             System.out.println("Perfil de Risco: " + (carteira.getPerfilRisco() != null ? carteira.getPerfilRisco().getDescricao() : "N/A"));
-            System.out.println("Valor Inicial: R$ " + formatarValor(carteira.getValorInicial()));
+            System.out.println("Valor da Carteira: R$ " + formatarValor(carteira.getValorInicial()));
             System.out.println("Valor Atual: R$ " + formatarValor(carteira.getValorAtual()));
             System.out.println("Criada em: " + formatarData(carteira.getDataCriacao()));
+            if (carteira.getDataAtualizacao() != null) {
+                System.out.println("Modificada em: " + formatarData(carteira.getDataAtualizacao()));
+            }
             System.out.println();
 
             System.out.println("Escolha uma opção:");
@@ -591,7 +594,7 @@ public class ConsoleApplication implements CommandLineRunner {
         }
         com.invest.model.PrazoCarteira prazo = obterPrazoCarteira(prazoOpcao);
 
-        System.out.print("Valor inicial (R$, opcional, ou 0 para cancelar): ");
+        System.out.print("Valor da carteira (R$, opcional, ou 0 para cancelar): ");
         String valorInicialStr = scanner.nextLine().trim();
         if (valorInicialStr.equalsIgnoreCase("cancelar")) {
             System.out.println("Criação de carteira cancelada.");
@@ -603,7 +606,7 @@ public class ConsoleApplication implements CommandLineRunner {
             try {
                 valorInicial = new BigDecimal(valorInicialStr.replace(",", "."));
             } catch (NumberFormatException e) {
-                System.out.println("Valor inválido. Usando valor inicial zero.");
+                System.out.println("Valor inválido. Usando valor zero para a carteira.");
                 valorInicial = BigDecimal.ZERO;
             }
         }
@@ -923,7 +926,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 System.out.println();
                 System.out.println("Opções:");
                 System.out.println("1. Ajustar valor da compra para o saldo disponível");
-                System.out.println("2. Alterar valor inicial da carteira e tentar novamente");
+                System.out.println("2. Alterar valor da carteira e tentar novamente");
                 System.out.println("0. Cancelar compra");
                 System.out.print("Opção: ");
                 
@@ -973,8 +976,8 @@ public class ConsoleApplication implements CommandLineRunner {
                     
                     // Continua com o processo de compra com os valores ajustados
                 } else if (opcaoSaldo == 2) {
-                    // Alterar valor inicial da carteira
-                    System.out.print("Novo valor inicial da carteira (R$): ");
+                    // Alterar valor da carteira
+                    System.out.print("Novo valor da carteira (R$): ");
                     BigDecimal novoValorInicial = lerDecimal();
                     
                     try {
@@ -990,7 +993,7 @@ public class ConsoleApplication implements CommandLineRunner {
                         // Recarrega a carteira do banco para ter os dados atualizados
                         carteira = carteiraService.getCarteiraById(carteira.getId());
                         
-                        System.out.println("Valor inicial da carteira atualizado para R$ " + formatarValor(novoValorInicial));
+                        System.out.println("Valor da carteira atualizado para R$ " + formatarValor(novoValorInicial));
                         System.out.println();
                         System.out.println("Reiniciando processo de compra...");
                         System.out.println();
@@ -1739,7 +1742,7 @@ public class ConsoleApplication implements CommandLineRunner {
         System.out.println("2. 📄 Alterar Descrição");
         System.out.println("3. Alterar Objetivo");
         System.out.println("4.  Alterar Perfil de Risco");
-        System.out.println("5. Alterar Valor Inicial");
+        System.out.println("5. Alterar Valor da Carteira");
         System.out.println("0. Voltar");
         System.out.println();
         System.out.print("Opção: ");
@@ -1795,7 +1798,7 @@ public class ConsoleApplication implements CommandLineRunner {
                     request.setPerfilRisco(obterPerfilRisco(perfilOpcao));
                     break;
                 case 5:
-                    System.out.print("Novo valor inicial (R$) ou 0 para cancelar: ");
+                    System.out.print("Novo valor da carteira (R$) ou 0 para cancelar: ");
                     BigDecimal novoValor = lerDecimal();
                     if (novoValor.compareTo(BigDecimal.ZERO) < 0) {
                         System.out.println("Valor não pode ser negativo!");
