@@ -2,6 +2,7 @@ package com.invest.controller;
 
 import com.invest.service.CotacaoStreamingService;
 import com.invest.service.CotacaoUpdateService;
+import com.invest.service.PythonScriptExecutor;
 import com.invest.service.external.GoogleSheetsService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,10 +33,16 @@ public class CotacaoRestController {
     @Autowired
     private CotacaoUpdateService cotacaoUpdateService;
 
+    @Autowired
+    private PythonScriptExecutor pythonScriptExecutor;
+
     @Operation(summary = "Listar todas as cotações",
                description = "Retorna todas as cotações disponíveis no JSON com timestamp e total de ativos")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllCotacoes() {
+        // Atualiza o JSON antes de retornar
+        pythonScriptExecutor.executarAtualizacaoCotacoes();
+        
         Map<String, BigDecimal> cotacoesMap = googleSheetsService.getAllCotacoes();
         
         Map<String, Object> response = new HashMap<>();
@@ -50,6 +57,9 @@ public class CotacaoRestController {
                description = "Retorna a cotação de um ativo específico do JSON pelo código do ativo")
     @GetMapping("/{codigo}")
     public ResponseEntity<Map<String, Object>> getCotacao(@PathVariable String codigo) {
+        // Atualiza o JSON antes de buscar
+        pythonScriptExecutor.executarAtualizacaoCotacoes();
+        
         BigDecimal preco = googleSheetsService.buscarPrecoAtivo(codigo);
         
         if (preco == null) {

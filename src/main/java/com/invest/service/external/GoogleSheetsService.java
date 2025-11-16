@@ -2,6 +2,7 @@ package com.invest.service.external;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.invest.service.PythonScriptExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -28,6 +29,9 @@ public class GoogleSheetsService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private PythonScriptExecutor pythonScriptExecutor;
+
     private static final String JSON_PATH = "classpath:data/cotacoes.json";
     private static final String JSON_PATH_EXTERNAL = "cotacoes.json"; // Arquivo na raiz do projeto
 
@@ -47,6 +51,9 @@ public class GoogleSheetsService {
         }
 
         try {
+            // Atualiza o JSON antes de usar
+            pythonScriptExecutor.executarAtualizacaoCotacoes();
+            
             // Recarrega o cache se necessário
             recarregarCotacoesSeNecessario();
 
@@ -65,6 +72,9 @@ public class GoogleSheetsService {
      */
     public Map<String, BigDecimal> getAllCotacoes() {
         try {
+            // Atualiza o JSON antes de usar
+            pythonScriptExecutor.executarAtualizacaoCotacoes();
+            
             recarregarCotacoesSeNecessario();
             return new HashMap<>(cotacoesCache);
         } catch (Exception e) {
@@ -84,6 +94,9 @@ public class GoogleSheetsService {
         }
 
         try {
+            // Atualiza o JSON antes de usar
+            pythonScriptExecutor.executarAtualizacaoCotacoes();
+            
             Resource resource = resourceLoader.getResource(JSON_PATH);
             JsonNode rootNode = objectMapper.readTree(resource.getInputStream());
             String codigoUpper = codigoAtivo.toUpperCase().trim();

@@ -65,6 +65,9 @@ public class ConsoleApplication implements CommandLineRunner {
     @Autowired
     private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    @Autowired
+    private com.invest.service.PythonScriptExecutor pythonScriptExecutor;
+
     private Scanner scanner = new Scanner(System.in);
     private Investidor investidorLogado = null;
     @SuppressWarnings("unused") // Token JWT armazenado para possível uso futuro em requisições autenticadas
@@ -361,6 +364,21 @@ public class ConsoleApplication implements CommandLineRunner {
 
             int opcao = lerInteiro();
             System.out.println();
+
+            // Atualiza cotações antes de executar qualquer opção (exceto sair)
+            if (opcao != 0 && opcao >= 1 && opcao <= 7) {
+                System.out.println("🔄 Atualizando cotações...");
+                try {
+                    boolean sucesso = pythonScriptExecutor.executarAtualizacaoCotacoes(true); // Modo silencioso
+                    if (sucesso) {
+                        System.out.println("✅ Cotações atualizadas!");
+                    }
+                } catch (Exception e) {
+                    // Se falhar a atualização, continua mesmo assim
+                    System.err.println("⚠️ Aviso: Não foi possível atualizar cotações automaticamente.");
+                }
+                System.out.println();
+            }
 
             switch (opcao) {
                 case 1:
