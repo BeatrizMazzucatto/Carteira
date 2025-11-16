@@ -217,6 +217,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 System.out.println();
                 System.out.println("Pressione Enter para continuar...");
                 scanner.nextLine();
+                System.out.println();
                 return;
             }
             
@@ -267,6 +268,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
             
         } catch (Exception e) {
             System.out.println();
@@ -274,6 +276,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
         }
     }
 
@@ -1627,6 +1630,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
         }
     }
 
@@ -1646,6 +1650,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 System.out.println();
                 System.out.println("Pressione Enter para continuar...");
                 scanner.nextLine();
+                System.out.println();
                 return;
             }
 
@@ -1797,6 +1802,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
         }
     }
 
@@ -1844,6 +1850,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
 
         } catch (Exception e) {
             System.out.println("Erro ao calcular rentabilidade: " + e.getMessage());
@@ -2041,6 +2048,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
 
         } catch (Exception e) {
             System.out.println("Erro ao carregar ativos: " + e.getMessage());
@@ -2048,6 +2056,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
         }
     }
 
@@ -2087,6 +2096,7 @@ public class ConsoleApplication implements CommandLineRunner {
 
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
 
         } catch (Exception e) {
             System.out.println("Erro ao carregar transações: " + e.getMessage());
@@ -2448,6 +2458,7 @@ public class ConsoleApplication implements CommandLineRunner {
                 System.out.println();
                 System.out.println("Pressione Enter para continuar...");
                 scanner.nextLine();
+                System.out.println();
                 return;
             }
             
@@ -2669,6 +2680,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
             System.out.println();
+            System.out.println();
             
         } catch (Exception e) {
             System.out.println();
@@ -2677,6 +2689,7 @@ public class ConsoleApplication implements CommandLineRunner {
             System.out.println();
             System.out.println("Pressione Enter para continuar...");
             scanner.nextLine();
+            System.out.println();
         }
     }
 
@@ -2815,6 +2828,7 @@ public class ConsoleApplication implements CommandLineRunner {
         // Arredonda para 2 casas decimais
         return taxas.setScale(2, java.math.RoundingMode.HALF_UP);
     }
+
 
     /**
      * Lê a senha do terminal mostrando asteriscos em vez dos caracteres
